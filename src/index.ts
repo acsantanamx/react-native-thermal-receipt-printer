@@ -126,6 +126,11 @@ export const USBPrinter = {
     RNUSBPrinter.printRawData(billTo64Buffer(text, opts), (error: Error) =>
       console.warn(error)
     ),
+
+  printRawData: (base64data: string, opts: PrinterOptions = {}): void =>
+    RNUSBPrinter.printRawData(base64data, (error: Error) =>
+      console.warn(error)
+    ),
 };
 
 export const BLEPrinter = {
@@ -189,6 +194,11 @@ export const BLEPrinter = {
       );
     }
   },
+
+  printRawData: (base64data: string, opts: PrinterOptions = {}): void =>
+    RNBLEPrinter.printRawData(base64data, (error: Error) =>
+      console.warn(error)
+    ),
 
   // printImage: async (imagePath: string) => {
   //   const tmp = await imageToBuffer(imagePath);
@@ -258,6 +268,11 @@ export const NetPrinter = {
       );
     }
   },
+
+  printRawData: (base64data: string, opts: PrinterOptions = {}): void =>
+    RNNetPrinter.printRawData(base64data, (error: Error) =>
+      console.warn(error)
+    ),
 };
 
 export const NetPrinterEventEmitter = new NativeEventEmitter(RNNetPrinter);
