@@ -41,6 +41,7 @@ public class USBPrinterAdapter implements PrinterAdapter {
     private UsbEndpoint mEndPoint;
     private static final String ACTION_USB_PERMISSION = "com.pinmi.react.USBPrinter.USB_PERMISSION";
     private static final String EVENT_USB_DEVICE_ATTACHED = "usbAttached";
+    private static final String EVENT_USB_DEVICE_DETACHED = "usbDetached";
 
 
     private USBPrinterAdapter() {
@@ -72,11 +73,26 @@ public class USBPrinterAdapter implements PrinterAdapter {
                     Toast.makeText(context, "USB device has been turned off", Toast.LENGTH_LONG).show();
                     closeConnectionIfExists();
                 }
+                if (mContext != null) {
+                    UsbDevice usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                    if (usbDevice != null) {
+                        USBPrinterDevice printerDevice = new USBPrinterDevice(usbDevice);
+
+                        ((ReactApplicationContext) mContext).getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                                .emit(EVENT_USB_DEVICE_DETACHED, printerDevice.toRNWritableMap());
+                    }
+                }
+
             } else if (UsbManager.ACTION_USB_ACCESSORY_ATTACHED.equals(action) || UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
                 synchronized (this) {
                     if (mContext != null) {
-                        ((ReactApplicationContext) mContext).getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                                .emit(EVENT_USB_DEVICE_ATTACHED, null);
+                        UsbDevice usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                        if (usbDevice != null) {
+                            USBPrinterDevice printerDevice = new USBPrinterDevice(usbDevice);
+
+                            ((ReactApplicationContext) mContext).getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                                    .emit(EVENT_USB_DEVICE_ATTACHED, printerDevice.toRNWritableMap());
+                        }
                     }
                 }
             }
