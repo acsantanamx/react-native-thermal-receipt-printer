@@ -127,7 +127,7 @@ export const USBPrinter = {
       console.warn(error)
     ),
 
-  printRawData: (base64data: string, opts: PrinterOptions = {}): void =>
+  printRawData: (base64data: string): void =>
     RNUSBPrinter.printRawData(base64data, (error: Error) =>
       console.warn(error)
     ),
@@ -195,7 +195,7 @@ export const BLEPrinter = {
     }
   },
 
-  printRawData: (base64data: string, opts: PrinterOptions = {}): void =>
+  printRawData: (base64data: string): void =>
     RNBLEPrinter.printRawData(base64data, (error: Error) =>
       console.warn(error)
     ),
@@ -269,7 +269,7 @@ export const NetPrinter = {
     }
   },
 
-  printRawData: (base64data: string, opts: PrinterOptions = {}): void =>
+  printRawData: (base64data: string): void =>
     RNNetPrinter.printRawData(base64data, (error: Error) =>
       console.warn(error)
     ),

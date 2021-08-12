@@ -91,6 +91,11 @@ export var USBPrinter = {
             return console.warn(error);
         });
     },
+    printRawData: function (base64data) {
+        return RNUSBPrinter.printRawData(base64data, function (error) {
+            return console.warn(error);
+        });
+    },
 };
 export var BLEPrinter = {
     init: function () {
@@ -138,6 +143,15 @@ export var BLEPrinter = {
             });
         }
     },
+    printRawData: function (base64data) {
+        return RNBLEPrinter.printRawData(base64data, function (error) {
+            return console.warn(error);
+        });
+    },
+    // printImage: async (imagePath: string) => {
+    //   const tmp = await imageToBuffer(imagePath);
+    //   RNBLEPrinter.printRawData(tmp, (error: Error) => console.warn(error));
+    // },
 };
 export var NetPrinter = {
     init: function () {
@@ -185,10 +199,16 @@ export var NetPrinter = {
             });
         }
     },
+    printRawData: function (base64data) {
+        return RNNetPrinter.printRawData(base64data, function (error) {
+            return console.warn(error);
+        });
+    },
 };
 export var NetPrinterEventEmitter = new NativeEventEmitter(RNNetPrinter);
 export var RN_THERMAL_RECEIPT_PRINTER_EVENTS;
 (function (RN_THERMAL_RECEIPT_PRINTER_EVENTS) {
     RN_THERMAL_RECEIPT_PRINTER_EVENTS["EVENT_NET_PRINTER_SCANNED_SUCCESS"] = "scannerResolved";
+    RN_THERMAL_RECEIPT_PRINTER_EVENTS["EVENT_NET_PRINTER_SCANNING"] = "scannerRunning";
     RN_THERMAL_RECEIPT_PRINTER_EVENTS["EVENT_NET_PRINTER_SCANNED_ERROR"] = "registerError";
 })(RN_THERMAL_RECEIPT_PRINTER_EVENTS || (RN_THERMAL_RECEIPT_PRINTER_EVENTS = {}));

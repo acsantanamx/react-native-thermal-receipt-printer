@@ -17,7 +17,7 @@ export interface IBLEPrinter {
 export interface INetPrinter {
     device_name: string;
     host: string;
-    port: string;
+    port: number;
 }
 export declare const USBPrinter: {
     init: () => Promise<void>;
@@ -26,6 +26,7 @@ export declare const USBPrinter: {
     closeConn: () => Promise<void>;
     printText: (text: string, opts?: PrinterOptions) => void;
     printBill: (text: string, opts?: PrinterOptions) => void;
+    printRawData: (base64data: string) => void;
 };
 export declare const BLEPrinter: {
     init: () => Promise<void>;
@@ -34,17 +35,20 @@ export declare const BLEPrinter: {
     closeConn: () => Promise<void>;
     printText: (text: string, opts?: PrinterOptions) => void;
     printBill: (text: string, opts?: PrinterOptions) => void;
+    printRawData: (base64data: string) => void;
 };
 export declare const NetPrinter: {
     init: () => Promise<void>;
     getDeviceList: () => Promise<INetPrinter[]>;
-    connectPrinter: (host: string, port: string) => Promise<INetPrinter>;
+    connectPrinter: (host: string, port: number) => Promise<INetPrinter>;
     closeConn: () => Promise<void>;
     printText: (text: string, opts?: {}) => void;
     printBill: (text: string, opts?: {}) => void;
+    printRawData: (base64data: string) => void;
 };
 export declare const NetPrinterEventEmitter: NativeEventEmitter;
 export declare enum RN_THERMAL_RECEIPT_PRINTER_EVENTS {
     EVENT_NET_PRINTER_SCANNED_SUCCESS = "scannerResolved",
+    EVENT_NET_PRINTER_SCANNING = "scannerRunning",
     EVENT_NET_PRINTER_SCANNED_ERROR = "registerError"
 }
