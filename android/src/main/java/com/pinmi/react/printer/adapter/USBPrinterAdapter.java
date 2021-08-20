@@ -69,10 +69,7 @@ public class USBPrinterAdapter implements PrinterAdapter {
                     }
                 }
             } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-                if (mUsbDevice != null) {
-                    Toast.makeText(context, "USB device has been turned off", Toast.LENGTH_LONG).show();
-                    closeConnectionIfExists();
-                }
+
                 if (mContext != null) {
                     UsbDevice usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
                     if (usbDevice != null) {
@@ -80,6 +77,11 @@ public class USBPrinterAdapter implements PrinterAdapter {
 
                         ((ReactApplicationContext) mContext).getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                                 .emit(EVENT_USB_DEVICE_DETACHED, printerDevice.toRNWritableMap());
+                    }
+
+                    if (mUsbDevice != null && usbDevice.getVendorId() == mUsbDevice.getVendorId() &&  usbDevice.getProductId() == mUsbDevice.getProductId()) {
+                        closeConnectionIfExists();
+                        mUsbDevice = null;
                     }
                 }
 
