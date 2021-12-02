@@ -5,6 +5,8 @@ import android.hardware.usb.UsbDevice;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 
+import android.os.Build;
+
 /**
  * Created by xiesubin on 2017/9/21.
  */
