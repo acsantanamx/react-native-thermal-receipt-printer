@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -151,16 +152,23 @@ public class NetPrinterAdapter implements PrinterAdapter {
     public void selectDevice(PrinterDeviceId printerDeviceId, Callback sucessCallback, Callback errorCallback) {
         NetPrinterDeviceId netPrinterDeviceId = (NetPrinterDeviceId) printerDeviceId;
 
-        if (this.mSocket != null && !this.mSocket.isClosed() && mNetDevice.getPrinterDeviceId().equals(netPrinterDeviceId)) {
+        closeConnectionIfExists();
+
+        //if (this.mSocket != null && !this.mSocket.isClosed() && mNetDevice.getPrinterDeviceId().equals(netPrinterDeviceId)) {
+        if (this.mSocket != null && !this.mSocket.isClosed()) {
             Log.i(LOG_TAG, "already selected device, do not need repeat to connect");
             sucessCallback.invoke(this.mNetDevice.toRNWritableMap());
             return;
         }
 
         try {
-            Socket socket = new Socket(netPrinterDeviceId.getHost(), netPrinterDeviceId.getPort());
+            //Socket socket = new Socket(netPrinterDeviceId.getHost(), netPrinterDeviceId.getPort());
+            Socket socket = new Socket();
+            SocketAddress socketAddress = new InetSocketAddress(netPrinterDeviceId.getHost(), netPrinterDeviceId.getPort());
+            socket.connect(socketAddress, 3000);
+
             if (socket.isConnected()) {
-                closeConnectionIfExists();
+                //closeConnectionIfExists();
                 this.mSocket = socket;
                 this.mNetDevice = new NetPrinterDevice(netPrinterDeviceId.getHost(), netPrinterDeviceId.getPort());
                 sucessCallback.invoke(this.mNetDevice.toRNWritableMap());
@@ -168,6 +176,7 @@ public class NetPrinterAdapter implements PrinterAdapter {
                 errorCallback.invoke("unable to build connection with host: " + netPrinterDeviceId.getHost() + ", port: " + netPrinterDeviceId.getPort());
                 return;
             }
+
         } catch (IOException e) {
             e.printStackTrace();
             errorCallback.invoke("failed to connect printer: " + e.getMessage());
@@ -196,6 +205,13 @@ public class NetPrinterAdapter implements PrinterAdapter {
             errorCallback.invoke("bluetooth connection is not built, may be you forgot to connectPrinter");
             return;
         }
+
+        if (this.mSocket.isClosed()) {
+            Log.i(LOG_TAG, "already selected device, do not need repeat to connect");
+
+            return;
+        }
+
         final String rawData = rawBase64Data;
         final Socket socket = this.mSocket;
         Log.v(LOG_TAG, "start to print raw data " + rawBase64Data);
