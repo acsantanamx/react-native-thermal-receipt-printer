@@ -235,6 +235,33 @@ public class NetPrinterAdapter implements PrinterAdapter {
     private static final byte[] PAPER_PROBE_CMD = {(byte) 0x10, 0x04, 0x04};
     private static final int PAPER_PROBE_TIMEOUT_MS = 3000;
 
+    public void printRawDataAsync(String rawBase64Data, Callback successCallback, Callback errorCallback) {
+        if (this.mSocket == null || this.mSocket.isClosed()) {
+            errorCallback.invoke("connection is not built, may be you forgot to connectPrinter");
+            return;
+        }
+
+        final String rawData = rawBase64Data;
+        final Socket socket = this.mSocket;
+        Log.v(LOG_TAG, "start to print raw data async " + rawBase64Data);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    byte[] bytes = Base64.decode(rawData, Base64.DEFAULT);
+                    OutputStream printerOutputStream = socket.getOutputStream();
+                    printerOutputStream.write(bytes, 0, bytes.length);
+                    printerOutputStream.flush();
+                    successCallback.invoke();
+                } catch (IOException e) {
+                    Log.e(LOG_TAG, "failed to print data" + rawData);
+                    e.printStackTrace();
+                    errorCallback.invoke(e.getMessage());
+                }
+            }
+        }).start();
+    }
+
     public void paperStatus(Callback successCallback, Callback errorCallback) {
         if (this.mNetDevice == null) {
             errorCallback.invoke("printer is not connected, call connectPrinter first");

@@ -39,11 +39,19 @@ RCT_EXPORT_METHOD(connectPrinter:(NSInteger)vendorId
 }
 
 RCT_EXPORT_METHOD(printRawData:(NSString *)text
-                  printerOptions:(NSDictionary *)options
-                  fail:(RCTResponseSenderBlock)errorCallback) {
+                   printerOptions:(NSDictionary *)options
+                   fail:(RCTResponseSenderBlock)errorCallback) {
     // TODO
     errorCallback(@[@"This function is not supported"]);
 }
+
+RCT_EXPORT_METHOD(printRawDataAsync:(NSString *)base64data
+                   success:(RCTResponseSenderBlock)successCallback
+                   fail:(RCTResponseSenderBlock)errorCallback) {
+    // TODO
+    errorCallback(@[@"This function is not supported"]);
+}
+
 
 RCT_EXPORT_METHOD(closeConn) {
     // TODO

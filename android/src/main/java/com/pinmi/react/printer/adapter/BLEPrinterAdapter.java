@@ -186,6 +186,33 @@ public class BLEPrinterAdapter implements PrinterAdapter{
     }
 
     @Override
+    public void printRawDataAsync(String rawBase64Data, Callback successCallback, Callback errorCallback) {
+        if(this.mBluetoothSocket == null){
+            errorCallback.invoke("bluetooth connection is not built, may be you forgot to connectPrinter");
+            return;
+        }
+        final String rawData = rawBase64Data;
+        final BluetoothSocket socket = this.mBluetoothSocket;
+        Log.v(LOG_TAG, "start to print raw data async " + rawBase64Data);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                byte [] bytes = Base64.decode(rawData, Base64.DEFAULT);
+                try{
+                    OutputStream printerOutputStream = socket.getOutputStream();
+                    printerOutputStream.write(bytes, 0, bytes.length);
+                    printerOutputStream.flush();
+                    successCallback.invoke();
+                }catch (IOException e){
+                    Log.e(LOG_TAG, "failed to print data" + rawData);
+                    e.printStackTrace();
+                    errorCallback.invoke(e.getMessage());
+                }
+            }
+        }).start();
+    }
+
+    @Override
     public void paperStatus(Callback successCallback, Callback errorCallback) {
         errorCallback.invoke("paperStatus is not supported for BLE printers");
     }

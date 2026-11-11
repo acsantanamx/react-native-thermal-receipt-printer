@@ -138,6 +138,16 @@ export const USBPrinter = {
     RNUSBPrinter.printRawData(base64data, (error: Error) =>
       console.warn(error)
     ),
+
+  printRawDataAsync: (base64data: string): Promise<void> =>
+    new Promise((resolve, reject) =>
+      // @ts-ignore
+      RNUSBPrinter.printRawDataAsync(
+        base64data,
+        () => resolve(),
+        (error: Error) => reject(error)
+      )
+    ),
 };
 
 export const BLEPrinter = {
@@ -205,6 +215,16 @@ export const BLEPrinter = {
   printRawData: (base64data: string): void =>
     RNBLEPrinter.printRawData(base64data, (error: Error) =>
       console.warn(error)
+    ),
+
+  printRawDataAsync: (base64data: string): Promise<void> =>
+    new Promise((resolve, reject) =>
+      // @ts-ignore
+      RNBLEPrinter.printRawDataAsync(
+        base64data,
+        () => resolve(),
+        (error: Error) => reject(error)
+      )
     ),
 
   // printImage: async (imagePath: string) => {
@@ -279,6 +299,16 @@ export const NetPrinter = {
   printRawData: (base64data: string): void =>
     RNNetPrinter.printRawData(base64data, (error: Error) =>
       console.warn(error)
+    ),
+
+  printRawDataAsync: (base64data: string): Promise<void> =>
+    new Promise((resolve, reject) =>
+      // @ts-ignore
+      RNNetPrinter.printRawDataAsync(
+        base64data,
+        () => resolve(),
+        (error: Error) => reject(error)
+      )
     ),
 
   paperStatus: (): Promise<PaperStatusResult> =>

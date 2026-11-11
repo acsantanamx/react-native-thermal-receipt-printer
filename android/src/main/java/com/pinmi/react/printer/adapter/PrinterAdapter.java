@@ -26,5 +26,7 @@ public interface PrinterAdapter {
 
     public void printRawData(String rawBase64Data, Callback errorCallback);
 
+    public void printRawDataAsync(String rawBase64Data, Callback successCallback, Callback errorCallback);
+
     public void paperStatus(Callback successCallback, Callback errorCallback);
 }

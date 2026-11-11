@@ -257,5 +257,67 @@ RCT_EXPORT_METHOD(paperStatus:(RCTResponseSenderBlock)successCallback
     });
 }
 
-@end
+RCT_EXPORT_METHOD(printRawDataAsync:(NSString *)base64data
+                   success:(RCTResponseSenderBlock)successCallback
+                   fail:(RCTResponseSenderBlock)errorCallback) {
+    if (!connected_ip) {
+        errorCallback(@[@"printer is not connected, call connectPrinter first"]);
+        return;
+    }
 
+    NSString *host = [connected_ip copy];
+    NSData *payload = [[NSData alloc] initWithBase64EncodedString:base64data options:NSDataBase64DecodingIgnoreUnknownCharacters];
+    int port = 9100;
+
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        const int timeoutMs = 5000;
+
+        int fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (fd < 0) {
+            errorCallback(@[@"socket create failed"]);
+            return;
+        }
+
+        struct timeval tv;
+        tv.tv_sec = timeoutMs / 1000;
+        tv.tv_usec = (timeoutMs % 1000) * 1000;
+        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+        setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+
+        struct sockaddr_in addr;
+        memset(&addr, 0, sizeof(addr));
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(port);
+        inet_pton(AF_INET, [host UTF8String], &addr.sin_addr);
+
+        if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) != 0) {
+            close(fd);
+            errorCallback(@[[NSString stringWithFormat:@"connect failed: %s", strerror(errno)]]);
+            return;
+        }
+
+        const unsigned char *bytes = payload.bytes;
+        size_t remaining = payload.length;
+        size_t offset = 0;
+        int sendOk = 1;
+        while (remaining > 0) {
+            ssize_t sent = send(fd, bytes + offset, remaining, 0);
+            if (sent <= 0) {
+                sendOk = 0;
+                break;
+            }
+            offset += sent;
+            remaining -= sent;
+        }
+
+        close(fd);
+
+        if (sendOk) {
+            successCallback(@[YES]);
+        } else {
+            errorCallback(@[@"failed to write data to printer"]);
+        }
+    });
+}
+
+@end

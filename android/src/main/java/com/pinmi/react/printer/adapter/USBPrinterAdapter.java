@@ -241,6 +241,39 @@ public class USBPrinterAdapter implements PrinterAdapter {
     }
 
     @Override
+    public void printRawDataAsync(String data, Callback successCallback, Callback errorCallback) {
+        final String rawData = data;
+        Log.v(LOG_TAG, "start to print raw data async " + data);
+        boolean isConnected = openConnection();
+        if (isConnected) {
+            Log.v(LOG_TAG, "Connected to device");
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        byte[] bytes = Base64.decode(rawData, Base64.DEFAULT);
+                        int b = mUsbDeviceConnection.bulkTransfer(mEndPoint, bytes, bytes.length, 100000);
+                        Log.i(LOG_TAG, "Return Status: b-->" + b);
+                        if (b >= 0) {
+                            successCallback.invoke();
+                        } else {
+                            errorCallback.invoke("bulkTransfer returned " + b);
+                        }
+                    } catch (Exception e) {
+                        Log.e(LOG_TAG, "failed to print data" + rawData);
+                        e.printStackTrace();
+                        errorCallback.invoke(e.getMessage());
+                    }
+                }
+            }).start();
+        } else {
+            String msg = "failed to connected to device";
+            Log.v(LOG_TAG, msg);
+            errorCallback.invoke(msg);
+        }
+    }
+
+    @Override
     public void paperStatus(Callback successCallback, Callback errorCallback) {
         errorCallback.invoke("paperStatus is not supported for USB printers");
     }

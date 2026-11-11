@@ -125,4 +125,27 @@ RCT_EXPORT_METHOD(closeConn) {
     }
 }
 
+RCT_EXPORT_METHOD(printRawDataAsync:(NSString *)text
+                   success:(RCTResponseSenderBlock)successCallback
+                   fail:(RCTResponseSenderBlock)errorCallback) {
+    @try {
+        !m_printer ? [NSException raise:@"Invalid connection" format:@"printRawDataAsync: Can't connect to printer"] : nil;
+        NSData *payload = [[NSData alloc] initWithBase64EncodedString:text options:NSDataBase64DecodingIgnoreUnknownCharacters];
+        NSString *hexStr = [self hexFromData:payload];
+        [[PrinterSDK defaultPrinterSDK] sendHex:hexStr];
+        successCallback(@[YES]);
+    } @catch (NSException *exception) {
+        errorCallback(@[exception.reason]);
+    }
+}
+
+- (NSString *)hexFromData:(NSData *)data {
+    const unsigned char *bytes = data.bytes;
+    NSMutableString *hex = [NSMutableString stringWithCapacity:data.length * 2];
+    for (NSUInteger i = 0; i < data.length; i++) {
+        [hex appendFormat:@"%02X", bytes[i]];
+    }
+    return hex;
+}
+
 @end

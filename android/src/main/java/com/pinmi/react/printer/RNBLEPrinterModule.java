@@ -70,6 +70,11 @@ public class RNBLEPrinterModule extends ReactContextBaseJavaModule implements RN
 
 
     @ReactMethod
+    public void printRawDataAsync(String base64Data, Callback successCallback, Callback errorCallback) {
+        adapter.printRawDataAsync(base64Data, successCallback, errorCallback);
+    }
+
+    @ReactMethod
     public void connectPrinter(String innerAddress, Callback successCallback, Callback errorCallback) {
         adapter.selectDevice(BLEPrinterDeviceId.valueOf(innerAddress), successCallback, errorCallback);
     }
