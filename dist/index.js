@@ -96,6 +96,12 @@ export var USBPrinter = {
             return console.warn(error);
         });
     },
+    printRawDataAsync: function (base64data) {
+        return new Promise(function (resolve, reject) {
+            // @ts-ignore
+            return RNUSBPrinter.printRawDataAsync(base64data, function () { return resolve(); }, function (error) { return reject(error); });
+        });
+    },
 };
 export var BLEPrinter = {
     init: function () {
@@ -146,6 +152,12 @@ export var BLEPrinter = {
     printRawData: function (base64data) {
         return RNBLEPrinter.printRawData(base64data, function (error) {
             return console.warn(error);
+        });
+    },
+    printRawDataAsync: function (base64data) {
+        return new Promise(function (resolve, reject) {
+            // @ts-ignore
+            return RNBLEPrinter.printRawDataAsync(base64data, function () { return resolve(); }, function (error) { return reject(error); });
         });
     },
     // printImage: async (imagePath: string) => {
@@ -202,6 +214,18 @@ export var NetPrinter = {
     printRawData: function (base64data) {
         return RNNetPrinter.printRawData(base64data, function (error) {
             return console.warn(error);
+        });
+    },
+    printRawDataAsync: function (base64data) {
+        return new Promise(function (resolve, reject) {
+            // @ts-ignore
+            return RNNetPrinter.printRawDataAsync(base64data, function () { return resolve(); }, function (error) { return reject(error); });
+        });
+    },
+    paperStatus: function () {
+        return new Promise(function (resolve, reject) {
+            // @ts-ignore
+            return RNNetPrinter.paperStatus(function (result) { return resolve(result); }, function (error) { return reject(error); });
         });
     },
 };
