@@ -184,4 +184,9 @@ public class BLEPrinterAdapter implements PrinterAdapter{
             }
         }).start();
     }
+
+    @Override
+    public void paperStatus(Callback successCallback, Callback errorCallback) {
+        errorCallback.invoke("paperStatus is not supported for BLE printers");
+    }
 }

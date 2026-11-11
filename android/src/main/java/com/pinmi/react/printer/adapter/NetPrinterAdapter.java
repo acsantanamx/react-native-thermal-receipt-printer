@@ -231,4 +231,68 @@ public class NetPrinterAdapter implements PrinterAdapter {
         }).start();
 
     }
+
+    private static final byte[] PAPER_PROBE_CMD = {(byte) 0x10, 0x04, 0x04};
+    private static final int PAPER_PROBE_TIMEOUT_MS = 3000;
+
+    public void paperStatus(Callback successCallback, Callback errorCallback) {
+        if (this.mNetDevice == null) {
+            errorCallback.invoke("printer is not connected, call connectPrinter first");
+            return;
+        }
+
+        NetPrinterDeviceId deviceId = (NetPrinterDeviceId) this.mNetDevice.getPrinterDeviceId();
+        final String host = deviceId.getHost();
+        final int port = deviceId.getPort();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Socket probeSocket = null;
+                try {
+                    probeSocket = new Socket();
+                    probeSocket.connect(new InetSocketAddress(host, port), PAPER_PROBE_TIMEOUT_MS);
+                    probeSocket.setSoTimeout(PAPER_PROBE_TIMEOUT_MS);
+
+                    OutputStream out = probeSocket.getOutputStream();
+                    out.write(PAPER_PROBE_CMD);
+                    out.flush();
+
+                    java.io.InputStream in = probeSocket.getInputStream();
+                    byte[] buf = new byte[16];
+                    int len = in.read(buf);
+
+                    if (len > 0) {
+                        int rawByte = buf[0] & 0xFF;
+                        boolean hasPaper = (rawByte & 0x60) == 0;
+
+                        WritableMap result = Arguments.createMap();
+                        result.putBoolean("hasPaper", hasPaper);
+                        result.putInt("rawByte", rawByte);
+                        StringBuilder hex = new StringBuilder();
+                        for (int i = 0; i < len; i++) {
+                            hex.append(String.format("%02x", buf[i]));
+                        }
+                        result.putString("hex", hex.toString());
+                        successCallback.invoke(result);
+                    } else {
+                        WritableMap result = Arguments.createMap();
+                        result.putBoolean("hasPaper", false);
+                        result.putString("reason", "no response from printer");
+                        successCallback.invoke(result);
+                    }
+                } catch (IOException e) {
+                    Log.e(LOG_TAG, "paperStatus probe failed: " + e.getMessage());
+                    WritableMap result = Arguments.createMap();
+                    result.putBoolean("hasPaper", false);
+                    result.putString("reason", e.getMessage() != null ? e.getMessage() : "timeout");
+                    successCallback.invoke(result);
+                } finally {
+                    if (probeSocket != null) {
+                        try { probeSocket.close(); } catch (IOException ignored) {}
+                    }
+                }
+            }
+        }).start();
+    }
 }

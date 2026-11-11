@@ -240,5 +240,10 @@ public class USBPrinterAdapter implements PrinterAdapter {
         }
     }
 
+    @Override
+    public void paperStatus(Callback successCallback, Callback errorCallback) {
+        errorCallback.invoke("paperStatus is not supported for USB printers");
+    }
+
 
 }

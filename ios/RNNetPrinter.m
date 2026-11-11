@@ -11,6 +11,12 @@
 #import "PrinterSDK.h"
 #include <ifaddrs.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <string.h>
 
 NSString *const EVENT_SCANNER_RESOLVED = @"scannerResolved";
 NSString *const EVENT_SCANNER_RUNNING = @"scannerRunning";
@@ -176,6 +182,79 @@ RCT_EXPORT_METHOD(closeConn) {
     } @catch (NSException *exception) {
         NSLog(@"%@", exception.reason);
     }
+}
+
+RCT_EXPORT_METHOD(paperStatus:(RCTResponseSenderBlock)successCallback
+                   fail:(RCTResponseSenderBlock)errorCallback) {
+    if (!connected_ip) {
+        errorCallback(@[@"printer is not connected, call connectPrinter first"]);
+        return;
+    }
+
+    NSString *host = [connected_ip copy];
+    int port = 9100;
+
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        const unsigned char probeCmd[] = {0x10, 0x04, 0x04};
+        const int timeoutMs = 3000;
+
+        int fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (fd < 0) {
+            NSDictionary *result = @{@"hasPaper": @NO, @"reason": @"socket create failed"};
+            successCallback(@[result]);
+            return;
+        }
+
+        struct timeval tv;
+        tv.tv_sec = timeoutMs / 1000;
+        tv.tv_usec = (timeoutMs % 1000) * 1000;
+        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+        setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+
+        struct sockaddr_in addr;
+        memset(&addr, 0, sizeof(addr));
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(port);
+        inet_pton(AF_INET, [host UTF8String], &addr.sin_addr);
+
+        int result = -1;
+        int rawByte = -1;
+        NSString *hexStr = nil;
+        NSString *reason = nil;
+
+        if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
+            send(fd, probeCmd, sizeof(probeCmd), 0);
+
+            unsigned char buf[32];
+            ssize_t n = recv(fd, buf, sizeof(buf), 0);
+            if (n > 0) {
+                rawByte = buf[0] & 0xFF;
+                NSMutableString *hex = [NSMutableString string];
+                for (ssize_t i = 0; i < n; i++) {
+                    [hex appendFormat:@"%02x", buf[i]];
+                }
+                hexStr = [hex copy];
+                result = ((buf[0] & 0x60) == 0) ? 1 : 0;
+            } else {
+                reason = @"no response from printer";
+            }
+        } else {
+            reason = [NSString stringWithFormat:@"connect failed: %s", strerror(errno)];
+        }
+
+        close(fd);
+
+        NSMutableDictionary *map = [NSMutableDictionary dictionary];
+        map[@"hasPaper"] = @(result == 1);
+        if (rawByte >= 0) {
+            map[@"rawByte"] = @(rawByte);
+            map[@"hex"] = hexStr;
+        }
+        if (reason) {
+            map[@"reason"] = reason;
+        }
+        successCallback(@[map]);
+    });
 }
 
 @end

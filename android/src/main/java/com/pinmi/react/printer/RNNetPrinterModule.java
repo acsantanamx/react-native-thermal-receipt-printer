@@ -60,6 +60,11 @@ public class RNNetPrinterModule extends ReactContextBaseJavaModule implements RN
         adapter.printRawData(base64Data, errorCallback);
     }
 
+    @ReactMethod
+    public void paperStatus(Callback successCallback, Callback errorCallback) {
+        ((NetPrinterAdapter) adapter).paperStatus(successCallback, errorCallback);
+    }
+
     @Override
     public String getName() {
         return "RNNetPrinter";

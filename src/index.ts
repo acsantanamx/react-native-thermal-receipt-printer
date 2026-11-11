@@ -30,6 +30,13 @@ export interface INetPrinter {
   port: number;
 }
 
+export interface PaperStatusResult {
+  hasPaper: boolean;
+  rawByte?: number;
+  hex?: string;
+  reason?: string;
+}
+
 const textTo64Buffer = (text: string, opts: PrinterOptions) => {
   const defaultOptions = {
     beep: false,
@@ -272,6 +279,15 @@ export const NetPrinter = {
   printRawData: (base64data: string): void =>
     RNNetPrinter.printRawData(base64data, (error: Error) =>
       console.warn(error)
+    ),
+
+  paperStatus: (): Promise<PaperStatusResult> =>
+    new Promise((resolve, reject) =>
+      // @ts-ignore
+      RNNetPrinter.paperStatus(
+        (result: PaperStatusResult) => resolve(result),
+        (error: Error) => reject(error)
+      )
     ),
 };
 

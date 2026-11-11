@@ -43,4 +43,8 @@ local.properties
 buck-out/
 \.buckd/
 *.keystore
-      
+      .opencode/autopilot-debug.log
+.opencode/autopilot-debug.log
+.opencode/tasks.db
+.opencode/tasks.db-shm
+.opencode/tasks.db-wal
