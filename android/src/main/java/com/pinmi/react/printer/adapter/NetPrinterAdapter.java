@@ -154,25 +154,19 @@ public class NetPrinterAdapter implements PrinterAdapter {
 
         closeConnectionIfExists();
 
-        //if (this.mSocket != null && !this.mSocket.isClosed() && mNetDevice.getPrinterDeviceId().equals(netPrinterDeviceId)) {
-        if (this.mSocket != null && !this.mSocket.isClosed()) {
-            Log.i(LOG_TAG, "already selected device, do not need repeat to connect");
-            sucessCallback.invoke(this.mNetDevice.toRNWritableMap());
-            return;
-        }
-
         try {
-            //Socket socket = new Socket(netPrinterDeviceId.getHost(), netPrinterDeviceId.getPort());
             Socket socket = new Socket();
             SocketAddress socketAddress = new InetSocketAddress(netPrinterDeviceId.getHost(), netPrinterDeviceId.getPort());
             socket.connect(socketAddress, 3000);
 
             if (socket.isConnected()) {
-                //closeConnectionIfExists();
-                this.mSocket = socket;
                 this.mNetDevice = new NetPrinterDevice(netPrinterDeviceId.getHost(), netPrinterDeviceId.getPort());
+                // No mantenemos el socket abierto: esta impresora solo permite 1 sesión TCP activa a la vez.
+                // Cada operación (printRawDataAsync / paperStatus) abre y cierra su propio socket efímero.
+                socket.close();
                 sucessCallback.invoke(this.mNetDevice.toRNWritableMap());
             } else {
+                socket.close();
                 errorCallback.invoke("unable to build connection with host: " + netPrinterDeviceId.getHost() + ", port: " + netPrinterDeviceId.getPort());
                 return;
             }
@@ -201,24 +195,23 @@ public class NetPrinterAdapter implements PrinterAdapter {
 
     @Override
     public void printRawData(String rawBase64Data, Callback errorCallback) {
-        if (this.mSocket == null) {
-            errorCallback.invoke("bluetooth connection is not built, may be you forgot to connectPrinter");
+        if (this.mNetDevice == null) {
+            errorCallback.invoke("connection is not built, may be you forgot to connectPrinter");
             return;
         }
 
-        if (this.mSocket.isClosed()) {
-            Log.i(LOG_TAG, "already selected device, do not need repeat to connect");
-
-            return;
-        }
-
+        NetPrinterDeviceId deviceId = (NetPrinterDeviceId) this.mNetDevice.getPrinterDeviceId();
+        final String host = deviceId.getHost();
+        final int port = deviceId.getPort();
         final String rawData = rawBase64Data;
-        final Socket socket = this.mSocket;
         Log.v(LOG_TAG, "start to print raw data " + rawBase64Data);
         new Thread(new Runnable() {
             @Override
             public void run() {
+                Socket socket = null;
                 try {
+                    socket = new Socket();
+                    socket.connect(new InetSocketAddress(host, port), PAPER_PROBE_TIMEOUT_MS);
                     byte[] bytes = Base64.decode(rawData, Base64.DEFAULT);
                     OutputStream printerOutputStream = socket.getOutputStream();
                     printerOutputStream.write(bytes, 0, bytes.length);
@@ -226,6 +219,10 @@ public class NetPrinterAdapter implements PrinterAdapter {
                 } catch (IOException e) {
                     Log.e(LOG_TAG, "failed to print data" + rawData);
                     e.printStackTrace();
+                } finally {
+                    if (socket != null) {
+                        try { socket.close(); } catch (IOException ignored) {}
+                    }
                 }
             }
         }).start();
@@ -236,18 +233,24 @@ public class NetPrinterAdapter implements PrinterAdapter {
     private static final int PAPER_PROBE_TIMEOUT_MS = 3000;
 
     public void printRawDataAsync(String rawBase64Data, Callback successCallback, Callback errorCallback) {
-        if (this.mSocket == null || this.mSocket.isClosed()) {
+        if (this.mNetDevice == null) {
             errorCallback.invoke("connection is not built, may be you forgot to connectPrinter");
             return;
         }
 
+        NetPrinterDeviceId deviceId = (NetPrinterDeviceId) this.mNetDevice.getPrinterDeviceId();
+        final String host = deviceId.getHost();
+        final int port = deviceId.getPort();
         final String rawData = rawBase64Data;
-        final Socket socket = this.mSocket;
         Log.v(LOG_TAG, "start to print raw data async " + rawBase64Data);
         new Thread(new Runnable() {
             @Override
             public void run() {
+                Socket socket = null;
                 try {
+                    socket = new Socket();
+                    socket.connect(new InetSocketAddress(host, port), PAPER_PROBE_TIMEOUT_MS);
+
                     byte[] bytes = Base64.decode(rawData, Base64.DEFAULT);
                     OutputStream printerOutputStream = socket.getOutputStream();
                     printerOutputStream.write(bytes, 0, bytes.length);
@@ -257,6 +260,10 @@ public class NetPrinterAdapter implements PrinterAdapter {
                     Log.e(LOG_TAG, "failed to print data" + rawData);
                     e.printStackTrace();
                     errorCallback.invoke(e.getMessage());
+                } finally {
+                    if (socket != null) {
+                        try { socket.close(); } catch (IOException ignored) {}
+                    }
                 }
             }
         }).start();
